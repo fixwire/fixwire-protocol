@@ -364,6 +364,14 @@ tests each one. Numbers are upper bounds unless an option is named.
 - Where processes fork (pre-forking servers), a child starts its own
   sender at once and leaves the parent's queued data to the parent; locks
   held at the fork are not waited on.
+- The SDK never changes how the app ends. A crash the runtime would cause
+  (an uncaught exception, Node's unhandled rejections in their default
+  mode) still happens, once the SDK has reported it and flushed within its
+  shutdown timeout.
+- Sending never holds up the app's response: where a request ends with the
+  process (PHP), the response is finished before anything is sent, and an
+  outage pauses sending for every worker of the server, not one request
+  at a time.
 
 ### Sending
 
@@ -413,7 +421,9 @@ tests each one. Numbers are upper bounds unless an option is named.
   each, the newest kept.
 - **Source lines**: 5 above and below the frame's line, read only from
   regular files of at most 10 MB, through a cache of at most 64 files and
-  32 MB.
+  32 MB. Where a stack can arrive as text (a JavaScript object with a
+  `stack` of its own), only files with the language's source extensions
+  are read.
 - **Spans**: a segment keeps at most 1,000 child spans, a span at most 128
   attributes.
 - **Sessions**: at most 5,000 users are counted apart per send; past that,
