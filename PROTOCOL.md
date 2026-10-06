@@ -102,6 +102,25 @@ A comma-separated list of `{seconds}:{categories}`, categories separated by
 empty list means all of them. Each kind of data has its own quota, so a full
 log quota never stops errors.
 
+### What Fixwire keeps of a request
+
+Fixwire refuses or cuts what goes past these limits and counts it, so a
+sender is never charged for it:
+
+- At most 1,000 errors and messages, and 1,000 session updates, per
+  request; the rest are refused (`too_many`, partial success for OTLP).
+- Tags: the first 100 of an event, in the order sent; a key over 32
+  characters is dropped (a cut key would name another tag) and a value is
+  cut to 200 characters (`tag_limit`).
+- String attribute values are cut to 16 kB (`value_too_long`).
+- When Fixwire's queue for a kind of data is full, that kind is refused
+  and paused for a few seconds in `Fixwire-Rate-Limits`, while the rest of
+  the request is kept (partial success). Only when nothing could be kept is
+  the answer `429` with `Retry-After`, so an SDK never sends again what was
+  already accepted.
+- A client that keeps sending unknown keys is answered `429` for a while
+  before its keys are looked up.
+
 ## 3. Traces: `POST /v1/traces`
 
 An OTLP `ExportTraceServiceRequest`, as `application/x-protobuf` or
